@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>兒童影音繪本製作教材</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 首頁元件 (保留原本的創作空間佔位符)
+        const Home = () => (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                    <i data-lucide="clapperboard" className="w-12 h-12 text-blue-500"></i>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-800 mb-4">歡迎來到影音繪本創作基地</h2>
+                <p className="text-gray-600 mb-8 max-w-2xl">
+                    在這裡，你可以運用 AI 工具創作出屬於你獨一無二的故事、圖像與音樂。
+                    <br/>準備好開始你的創作之旅了嗎？
+                </p>
+                <button className="px-8 py-3 bg-blue-500 text-white rounded-full font-bold shadow-lg hover:bg-blue-600 transition-all hover:-translate-y-1">
+                    開始創作
+                </button>
+            </div>
+        );
+
+        // 評量表元件
+        const Assessment = () => {
+            const [isPhilosophyOpen, setIsPhilosophyOpen] = useState(true);
+            const [studentInfo, setStudentInfo] = useState({
+                className: '', seat: '', name: ''
+            });
+            const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' });
+
+            const [scores, setScores] = useState({
+                q1: null, q2: null, q3: null, q4: null, q5: null
+            });
+            const [reflections, setReflections] = useState({
+                r1: '', r2: '', r3: '', r4: ''
+            });
+
+            // 評分標準資料
+            const criteria = [
+                { id: 'q1', title: '1️⃣ 故事創作歷程 (20 分)', options: [
+                    { score: 20, label: '16–20 分：有自行修改提示詞，故事有個人想法' },
+                    { score: 15, label: '11–15 分：部分修改，有加入少量創意' },
+                    { score: 10, label: '6–10 分：大多使用老師模板' },
+                    { score: 5, label: '0–5 分：未完成或直接複製' }
+                ]},
+                { id: 'q2', title: '2️⃣ 繪本音樂創作 (20 分)', options: [
+                    { score: 20, label: '16–20 分：自行調整風格、BPM、歌詞' },
+                    { score: 15, label: '11–15 分：有部分修改' },
+                    { score: 10, label: '6–10 分：直接使用老師模板' },
+                    { score: 5, label: '0–5 分：未完成' }
+                ]},
+                { id: 'q3', title: '3️⃣ 角色一致性與圖像設計 (20 分)', options: [
+                    { score: 20, label: '16–20 分：角色一致、風格統一' },
+                    { score: 15, label: '11–15 分：大致一致' },
+                    { score: 10, label: '6–10 分：角色變動明顯' },
+                    { score: 5, label: '0–5 分：混亂或未完成' }
+                ]},
+                { id: 'q4', title: '4️⃣ 故事完整度 (20 分)', options: [
+                    { score: 20, label: '16–20 分：有完整起承轉合' },
+                    { score: 15, label: '11–15 分：基本完整' },
+                    { score: 10, label: '6–10 分：部分跳躍' },
+                    { score: 5, label: '0–5 分：未完成' }
+                ]},
+                { id: 'q5', title: '5️⃣ 專題完成度 (20 分)', options: [
+                    { score: 20, label: '16–20 分：故事＋音樂＋圖像全部完成' },
+                    { score: 15, label: '11–15 分：缺 1 項' },
+                    { score: 10, label: '6–10 分：缺 2 項以上' },
+                    { score: 5, label: '0–5 分：未完成' }
+                ]}
+            ];
+
+            const handleScoreChange = (id, score) => {
+                setScores(prev => ({ ...prev, [id]: score }));
+            };
+
+            const handleReflectionChange = (id, text) => {
+                setReflections(prev => ({ ...prev, [id]: text }));
+            };
+
+            // 計算分數與等級
+            const totalScore = Object.values(scores).reduce((sum, val) => sum + (val || 0), 0);
+            const isAllAssessed = Object.values(scores).every(val => val !== null);
+            
+            let levelInfo = { text: "請完成所有評分", color: "text-gray-400", bar: "bg-gray-200" };
+            if (isAllAssessed) {
+                if (totalScore >= 90) levelInfo = { text: "🌟 創意達人", color: "text-yellow-500", bar: "bg-yellow-400" };
+                else if (totalScore >= 75) levelInfo = { text: "🌈 勇氣創作者", color: "text-purple-500", bar: "bg-purple-400" };
+                else if (totalScore >= 60) levelInfo = { text: "🌱 學習成長中", color: "text-green-500", bar: "bg-green-400" };
+                else levelInfo = { text: "🔄 需要再挑戰", color: "text-red-500", bar: "bg-red-400" };
+            }
+
+            // 計算完成度狀態
+            const itemsOver11 = Object.values(scores).filter(val => val !== null && val >= 11).length;
+            let completionStatus = { text: "等待評分...", bg: "bg-gray-100", border: "border-gray-200" };
+            if (isAllAssessed) {
+                if (itemsOver11 === 5) completionStatus = { text: "✅ 全部完成", bg: "bg-green-50", border: "border-green-200" };
+                else if (itemsOver11 >= 3) completionStatus = { text: "🟡 部分完成", bg: "bg-yellow-50", border: "border-yellow-200" };
+                else completionStatus = { text: "🔴 尚未完成", bg: "bg-red-50", border: "border-red-200" };
+            }
+
+            const handleSubmit = async () => {
+                // 1. 檢查基本資料
+                if (!studentInfo.className || !studentInfo.seat || !studentInfo.name) {
+                    setSubmitStatus({ type: 'error', message: '⚠️ 請填寫完整的班級、座號與姓名！' });
+                    return;
+                }
+                // 2. 檢查評分是否完成
+                if (!isAllAssessed) {
+                    setSubmitStatus({ type: 'error', message: '⚠️ 請完成上方所有的評分項目！' });
+                    return;
+                }
+                // 3. 檢查反思是否填寫
+                if (!reflections.r1 || !reflections.r2 || !reflections.r3 || !reflections.r4) {
+                    setSubmitStatus({ type: 'error', message: '⚠️ 請填寫所有的「AI 創作歷程反思」問題！' });
+                    return;
+                }
+
+                setSubmitStatus({ type: 'loading', message: '⏳ 正在傳送資料到 Google 試算表...' });
+
+                const payload = {
+                    className: studentInfo.className,
+                    seat: studentInfo.seat,
+                    name: studentInfo.name,
+                    q1: scores.q1,
+                    q2: scores.q2,
+                    q3: scores.q3,
+                    q4: scores.q4,
+                    q5: scores.q5,
+                    totalScore: totalScore,
+                    level: levelInfo.text,
+                    r1: reflections.r1,
+                    r2: reflections.r2,
+                    r3: reflections.r3,
+                    r4: reflections.r4
+                };
+
+                // 🔴 【重要】請把這裡換成你部署 Google Apps Script 後取得的網址！
+                const scriptUrl = 'YOUR_GAS_WEB_APP_URL_HERE'; 
+
+                try {
+                    if (scriptUrl === 'https://script.google.com/macros/s/AKfycbyRdQvqjuduZ6Rx07Wzk4Izhjbbrj3IMIHcqau76oh7dKe09yX-a0qgUVGVqct5i0Re/exec') {
+                        setSubmitStatus({ type: 'error', message: '❌ 請老師先在程式碼中設定 GAS 部署網址！' });
+                        return;
+                    }
+
+                    // 使用 fetch 以 POST 方式傳送資料給 GAS
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        // 使用 text/plain 可以避免觸發 CORS 預檢請求錯誤
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        setSubmitStatus({ type: 'success', message: '✅ 資料已成功送出！你可以點擊下方按鈕查看全班成績。' });
+                    } else {
+                        setSubmitStatus({ type: 'error', message: `❌ 傳送失敗：${result.message}` });
+                    }
+                } catch (error) {
+                    setSubmitStatus({ type: 'error', message: `❌ 連線發生錯誤，請稍後再試。` });
+                }
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto py-8 space-y-8 animate-fade-in">
+                    
+                    {/* 第零區：基本資料 */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            👤 學生基本資料
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">班級</label>
+                                <select 
+                                    value={studentInfo.className}
+                                    onChange={(e) => setStudentInfo({...studentInfo, className: e.target.value})}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
+                                >
+                                    <option value="">請選擇班級</option>
+                                    {['901', '902', '903', '904', '905', '906'].map(cls => (
+                                        <option key={cls} value={cls}>{cls} 班</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">座號</label>
+                                <input 
+                                    type="number" min="1" max="50"
+                                    value={studentInfo.seat}
+                                    onChange={(e) => setStudentInfo({...studentInfo, seat: e.target.value})}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
+                                    placeholder="例如：5"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">姓名</label>
+                                <input 
+                                    type="text"
+                                    value={studentInfo.name}
+                                    onChange={(e) => setStudentInfo({...studentInfo, name: e.target.value})}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow"
+                                    placeholder="請輸入真實姓名"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 第一區：評量理念說明 */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <button 
+                            onClick={() => setIsPhilosophyOpen(!isPhilosophyOpen)}
+                            className="w-full px-6 py-4 flex justify-between items-center bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                        >
+                            <h3 className="text-xl font-bold text-indigo-800 flex items-center gap-2">
+                                🌱 為什麼我們要這樣評量？
+                            </h3>
+                            <i data-lucide={isPhilosophyOpen ? "chevron-up" : "chevron-down"} className="text-indigo-600"></i>
+                        </button>
+                        
+                        {isPhilosophyOpen && (
+                            <div className="p-6 text-gray-700 leading-relaxed border-t border-indigo-100">
+                                <p className="mb-4">本課程評量重點不只在「作品好不好看」，<br/>
+                                而是你是否理解 AI 的使用方式、是否有修改與思考、<br/>
+                                是否真正參與創作過程。</p>
+                                
+                                <ul className="space-y-2 mb-6 bg-white p-4 rounded-xl border border-gray-100">
+                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 可以使用 AI</li>
+                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 但不能只是複製貼上</li>
+                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 重點是修改、思考與創造</li>
+                                </ul>
+
+                                <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-4 rounded-xl font-medium text-center shadow-inner">
+                                    我們重視的是：你的想法 💡 你的改變 🔄 你的成長 📈
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 第二區：評量面向 */}
+                    <div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            📖 第二區：評量面向 <span className="text-sm font-normal text-gray-500">(請點選符合的描述)</span>
+                        </h3>
+                        <div className="space-y-6">
+                            {criteria.map((item) => (
+                                <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                    <h4 className="text-lg font-bold text-gray-700 mb-4">{item.title}</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {item.options.map((opt, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleScoreChange(item.id, opt.score)}
+                                                className={`text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-3
+                                                    ${scores[item.id] === opt.score 
+                                                        ? 'border-blue-500 bg-blue-50 shadow-md transform scale-[1.01]' 
+                                                        : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50'}`}
+                                            >
+                                                <div className={`w-5 h-5 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 border 
+                                                    ${scores[item.id] === opt.score ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'}`}>
+                                                    {scores[item.id] === opt.score && <i data-lucide="check" className="w-4 h-4"></i>}
+                                                </div>
+                                                <span className={scores[item.id] === opt.score ? 'font-medium text-blue-900' : 'text-gray-600'}>
+                                                    {opt.label}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 第三區 & 第五區 (並排顯示) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 第三區：自動計算總分 */}
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">📈 第三區：自動計算總分</h3>
+                            <div className="flex items-end gap-4 mb-4">
+                                <span className="text-5xl font-black text-gray-800">{totalScore}</span>
+                                <span className="text-gray-500 mb-1">/ 100 分</span>
+                            </div>
+                            
+                            <div className="w-full bg-gray-100 rounded-full h-3 mb-2 overflow-hidden">
+                                <div 
+                                    className={`h-3 transition-all duration-700 rounded-full ${levelInfo.bar}`} 
+                                    style={{ width: `${Math.min(totalScore, 100)}%` }}
+                                ></div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center mt-2">
+                                <span className="text-sm text-gray-500">當前等級：</span>
+                                <span className={`text-xl font-bold ${levelInfo.color}`}>{levelInfo.text}</span>
+                            </div>
+                        </div>
+
+                        {/* 第五區：完成度狀態 */}
+                        <div className={`p-6 rounded-2xl shadow-sm border ${completionStatus.border} ${completionStatus.bg} flex flex-col justify-center items-center text-center transition-colors duration-300`}>
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 w-full text-left">🧩 第五區：完成度狀態</h3>
+                            <div className="flex-grow flex flex-col items-center justify-center py-4">
+                                <div className="text-3xl font-bold mb-2">{completionStatus.text}</div>
+                                {isAllAssessed ? (
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        (共 {itemsOver11} 項指標達 11 分以上)
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-gray-500 mt-2">請完成上方所有評分以查看狀態</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 第四區：AI 使用反思 */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                            🪞 第四區：AI 使用反思
+                        </h3>
+                        <p className="text-gray-500 mb-6 text-sm">🤖 我的 AI 創作歷程 (必填)</p>
+                        
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">1. 我修改了哪些提示詞？</label>
+                                <textarea 
+                                    value={reflections.r1}
+                                    onChange={(e) => handleReflectionChange('r1', e.target.value)}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" 
+                                    rows="3" 
+                                    placeholder="例如：我把原本的「小狗」改成了「戴著紅色帽子的黃金獵犬」..."
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">2. 我為什麼這樣修改？</label>
+                                <textarea 
+                                    value={reflections.r2}
+                                    onChange={(e) => handleReflectionChange('r2', e.target.value)}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" 
+                                    rows="3"
+                                    placeholder="因為我想讓主角看起來更勇敢、更有特色..."
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">3. AI 幫助我什麼？</label>
+                                <textarea 
+                                    value={reflections.r3}
+                                    onChange={(e) => handleReflectionChange('r3', e.target.value)}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" 
+                                    rows="3"
+                                    placeholder="AI 幫我把腦中的畫面畫出來，還幫我配了適合的音樂..."
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label className="block text-gray-700 font-medium mb-2">4. 哪一頁是我最滿意的？為什麼？</label>
+                                <textarea 
+                                    value={reflections.r4}
+                                    onChange={(e) => handleReflectionChange('r4', e.target.value)}
+                                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" 
+                                    rows="3"
+                                    placeholder="我最喜歡第3頁，因為那一頁的光影效果最棒，角色表情很生動..."
+                                ></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 送出與連結按鈕區 */}
+                    <div className="flex flex-col items-center gap-6 pb-8 pt-4">
+                        {/* 狀態訊息提示 */}
+                        {submitStatus.message && (
+                            <div className={`px-6 py-3 rounded-xl font-bold text-center w-full max-w-2xl ${
+                                submitStatus.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' : 
+                                submitStatus.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 
+                                'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                                {submitStatus.message}
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap justify-center gap-4">
+                            <button 
+                                onClick={handleSubmit}
+                                disabled={submitStatus.type === 'loading'}
+                                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                <i data-lucide="send" className="w-5 h-5"></i>
+                                {submitStatus.type === 'loading' ? '資料送出中...' : '送出評量與反思'}
+                            </button>
+                            
+                            <a 
+                                href="https://docs.google.com/spreadsheets/d/16brhvj-t_dIUYJHX1vZHapv-ATS6x7k1VM4nDITuS-w/edit?usp=sharing" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 bg-white text-emerald-600 border-2 border-emerald-500 px-8 py-4 rounded-full font-bold text-lg shadow-md hover:bg-emerald-50 hover:scale-105 transition-all"
+                            >
+                                <i data-lucide="table" className="w-5 h-5"></i> 
+                                查看全班成績表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('home');
+
+            useEffect(() => {
+                lucide.createIcons();
+            });
+
+            return (
+                <div className="min-h-screen flex flex-col text-gray-800">
+                    {/* 頂部導覽列 */}
+                    <header className="bg-white shadow-sm sticky top-0 z-50">
+                        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
+                                <i data-lucide="clapperboard"></i>
+                                <span>童創影音工作室</span>
+                            </div>
+                            <nav className="flex gap-1 bg-gray-100 p-1 rounded-full">
+                                <button 
+                                    onClick={() => setCurrentPage('home')}
+                                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${currentPage === 'home' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    創作空間
+                                </button>
+                                <button 
+                                    onClick={() => setCurrentPage('assessment')}
+                                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${currentPage === 'assessment' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    評量與反思
+                                </button>
+                            </nav>
+                        </div>
+                    </header>
+
+                    {/* 主要內容區 */}
+                    <main className="flex-grow container mx-auto px-6">
+                        {currentPage === 'home' ? <Home /> : <Assessment />}
+                    </main>
+
+                    {/* 頁尾區塊 */}
+                    <footer className="text-center py-10 bg-white border-t border-gray-200 mt-auto">
+                        <div className="text-gray-500">&copy; 2026 國九彈性課程兒童影音繪本製作教材 | Designed for Kids & Parents</div>
+                        <div className="mt-2 text-gray-800 font-semibold tracking-wide">臺北市立陽明高中國中部 陳政川老師設計</div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
