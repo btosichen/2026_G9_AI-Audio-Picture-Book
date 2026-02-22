@@ -159,11 +159,13 @@
                 };
 
                 // 🔴 【重要】請把這裡換成你部署 Google Apps Script 後取得的網址！
-                const scriptUrl = 'YOUR_GAS_WEB_APP_URL_HERE'; 
+                // 網址格式一定會是： https://script.google.com/macros/s/......./exec
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbyRdQvqjuduZ6Rx07Wzk4Izhjbbrj3IMIHcqau76oh7dKe09yX-a0qgUVGVqct5i0Re/exec'; 
 
                 try {
-                    if (scriptUrl === 'https://script.google.com/macros/s/AKfycbyRdQvqjuduZ6Rx07Wzk4Izhjbbrj3IMIHcqau76oh7dKe09yX-a0qgUVGVqct5i0Re/exec') {
-                        setSubmitStatus({ type: 'error', message: '❌ 請老師先在程式碼中設定 GAS 部署網址！' });
+                    // 新增防呆檢查：確認網址是不是真的是 Google 的 Script 網址
+                    if (!scriptUrl.startsWith('https://script.google.com/')) {
+                        setSubmitStatus({ type: 'error', message: '❌ 系統設定錯誤：請老師確認是否填入以 https://script.google.com/ 開頭的正確 GAS 網址！' });
                         return;
                     }
 
