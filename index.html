@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>兒童影音繪本製作教材</title>
+    <title>兒童影音繪本製作 - 評量與反思</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -11,12 +11,9 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: #f8fafc; }
-        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -25,31 +22,27 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState } = React;
 
-        // 首頁元件 (保留原本的創作空間佔位符)
-        const Home = () => (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                    <i data-lucide="clapperboard" className="w-12 h-12 text-blue-500"></i>
-                </div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">歡迎來到影音繪本創作基地</h2>
-                <p className="text-gray-600 mb-8 max-w-2xl">
-                    在這裡，你可以運用 AI 工具創作出屬於你獨一無二的故事、圖像與音樂。
-                    <br/>準備好開始你的創作之旅了嗎？
-                </p>
-                <button className="px-8 py-3 bg-blue-500 text-white rounded-full font-bold shadow-lg hover:bg-blue-600 transition-all hover:-translate-y-1">
-                    開始創作
-                </button>
-            </div>
-        );
+        // --- 安全的 React 原生 SVG Icon 元件 ---
+        const icons = {
+            clapperboard: (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.4-2.2 1.5-2.5l13.5-4c1.1-.3 2.2.4 2.5 1.5l1 2.6z"/><path d="m2.6 10.4-.9-2.4"/><path d="m5.2 9.6-.9-2.4"/><path d="m7.8 8.7-.9-2.4"/><path d="m10.4 7.9-.9-2.4"/><path d="m13 7.1-.9-2.4"/><path d="m15.6 6.2-.9-2.4"/><path d="m18.2 5.4-.9-2.4"/><path d="m20.8 4.6-.9-2.4"/><path d="M4 11h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11z"/></svg>,
+            table: (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>,
+            'chevron-up': (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>,
+            'chevron-down': (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>,
+            'check-circle-2': (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>,
+            check: (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 6 9 17l-5-5"/></svg>,
+            send: (className) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        };
+
+        const Icon = ({ name, className = "w-6 h-6" }) => {
+            const renderIcon = icons[name];
+            return renderIcon ? renderIcon(className) : null;
+        };
 
         // 評量表元件
-        const Assessment = () => {
+        const Assessment = ({ studentInfo, setStudentInfo }) => {
             const [isPhilosophyOpen, setIsPhilosophyOpen] = useState(true);
-            const [studentInfo, setStudentInfo] = useState({
-                className: '', seat: '', name: ''
-            });
             const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' });
 
             const [scores, setScores] = useState({
@@ -123,17 +116,14 @@
             }
 
             const handleSubmit = async () => {
-                // 1. 檢查基本資料
                 if (!studentInfo.className || !studentInfo.seat || !studentInfo.name) {
                     setSubmitStatus({ type: 'error', message: '⚠️ 請填寫完整的班級、座號與姓名！' });
                     return;
                 }
-                // 2. 檢查評分是否完成
                 if (!isAllAssessed) {
                     setSubmitStatus({ type: 'error', message: '⚠️ 請完成上方所有的評分項目！' });
                     return;
                 }
-                // 3. 檢查反思是否填寫
                 if (!reflections.r1 || !reflections.r2 || !reflections.r3 || !reflections.r4) {
                     setSubmitStatus({ type: 'error', message: '⚠️ 請填寫所有的「AI 創作歷程反思」問題！' });
                     return;
@@ -158,21 +148,16 @@
                     r4: reflections.r4
                 };
 
-                // 🔴 【重要】請把這裡換成你部署 Google Apps Script 後取得的網址！
-                // 網址格式一定會是： https://script.google.com/macros/s/......./exec
                 const scriptUrl = 'https://script.google.com/macros/s/AKfycbytPcNUxjKs9E1e-A37G-IUIrxYihxtjHvtVs_i_sE-r2qvixL3xm9QO2r_yBw9Llzk/exec'; 
 
                 try {
-                    // 新增防呆檢查：確認網址是不是真的是 Google 的 Script 網址
                     if (!scriptUrl.startsWith('https://script.google.com/')) {
                         setSubmitStatus({ type: 'error', message: '❌ 系統設定錯誤：請老師確認是否填入以 https://script.google.com/ 開頭的正確 GAS 網址！' });
                         return;
                     }
 
-                    // 使用 fetch 以 POST 方式傳送資料給 GAS
                     const response = await fetch(scriptUrl, {
                         method: 'POST',
-                        // 使用 text/plain 可以避免觸發 CORS 預檢請求錯誤
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify(payload)
                     });
@@ -193,7 +178,7 @@
                 <div className="max-w-4xl mx-auto py-8 space-y-8 animate-fade-in">
                     
                     {/* 第零區：基本資料 */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 mt-4">
                         <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                             👤 學生基本資料
                         </h3>
@@ -243,7 +228,7 @@
                             <h3 className="text-xl font-bold text-indigo-800 flex items-center gap-2">
                                 🌱 為什麼我們要這樣評量？
                             </h3>
-                            <i data-lucide={isPhilosophyOpen ? "chevron-up" : "chevron-down"} className="text-indigo-600"></i>
+                            <Icon name={isPhilosophyOpen ? "chevron-up" : "chevron-down"} className="text-indigo-600 w-6 h-6" />
                         </button>
                         
                         {isPhilosophyOpen && (
@@ -253,9 +238,9 @@
                                 是否真正參與創作過程。</p>
                                 
                                 <ul className="space-y-2 mb-6 bg-white p-4 rounded-xl border border-gray-100">
-                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 可以使用 AI</li>
-                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 但不能只是複製貼上</li>
-                                    <li className="flex items-center gap-2"><i data-lucide="check-circle-2" className="text-green-500 w-5 h-5"></i> 重點是修改、思考與創造</li>
+                                    <li className="flex items-center gap-2"><Icon name="check-circle-2" className="text-green-500 w-5 h-5" /> 可以使用 AI</li>
+                                    <li className="flex items-center gap-2"><Icon name="check-circle-2" className="text-green-500 w-5 h-5" /> 但不能只是複製貼上</li>
+                                    <li className="flex items-center gap-2"><Icon name="check-circle-2" className="text-green-500 w-5 h-5" /> 重點是修改、思考與創造</li>
                                 </ul>
 
                                 <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-4 rounded-xl font-medium text-center shadow-inner">
@@ -286,7 +271,7 @@
                                             >
                                                 <div className={`w-5 h-5 mt-0.5 rounded-sm flex items-center justify-center flex-shrink-0 border 
                                                     ${scores[item.id] === opt.score ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'}`}>
-                                                    {scores[item.id] === opt.score && <i data-lucide="check" className="w-4 h-4"></i>}
+                                                    {scores[item.id] === opt.score && <Icon name="check" className="w-4 h-4" />}
                                                 </div>
                                                 <span className={scores[item.id] === opt.score ? 'font-medium text-blue-900' : 'text-gray-600'}>
                                                     {opt.label}
@@ -408,7 +393,7 @@
                                 disabled={submitStatus.type === 'loading'}
                                 className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
-                                <i data-lucide="send" className="w-5 h-5"></i>
+                                <Icon name="send" className="w-5 h-5" />
                                 {submitStatus.type === 'loading' ? '資料送出中...' : '送出評量與反思'}
                             </button>
                             
@@ -418,7 +403,7 @@
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 bg-white text-emerald-600 border-2 border-emerald-500 px-8 py-4 rounded-full font-bold text-lg shadow-md hover:bg-emerald-50 hover:scale-105 transition-all"
                             >
-                                <i data-lucide="table" className="w-5 h-5"></i> 
+                                <Icon name="table" className="w-5 h-5" /> 
                                 查看全班成績表
                             </a>
                         </div>
@@ -428,41 +413,25 @@
         };
 
         const App = () => {
-            const [currentPage, setCurrentPage] = useState('home');
-
-            useEffect(() => {
-                lucide.createIcons();
+            const [studentInfo, setStudentInfo] = useState({
+                className: '', seat: '', name: ''
             });
 
             return (
                 <div className="min-h-screen flex flex-col text-gray-800">
-                    {/* 頂部導覽列 */}
+                    {/* 頂部導覽列 (已移除切換按鈕，僅保留標題) */}
                     <header className="bg-white shadow-sm sticky top-0 z-50">
                         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
                             <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
-                                <i data-lucide="clapperboard"></i>
-                                <span>童創影音工作室</span>
+                                <Icon name="clapperboard" className="w-6 h-6" />
+                                <span>童創影音工作室 - 評量與反思</span>
                             </div>
-                            <nav className="flex gap-1 bg-gray-100 p-1 rounded-full">
-                                <button 
-                                    onClick={() => setCurrentPage('home')}
-                                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${currentPage === 'home' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    創作空間
-                                </button>
-                                <button 
-                                    onClick={() => setCurrentPage('assessment')}
-                                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${currentPage === 'assessment' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    評量與反思
-                                </button>
-                            </nav>
                         </div>
                     </header>
 
                     {/* 主要內容區 */}
                     <main className="flex-grow container mx-auto px-6">
-                        {currentPage === 'home' ? <Home /> : <Assessment />}
+                        <Assessment studentInfo={studentInfo} setStudentInfo={setStudentInfo} />
                     </main>
 
                     {/* 頁尾區塊 */}
